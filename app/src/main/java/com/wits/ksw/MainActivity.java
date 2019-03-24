@@ -3,12 +3,15 @@ package com.wits.ksw;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
 import com.wits.ksw.databinding.ActivityMainBinding;
 import com.wits.ksw.databinding.ActivityMainBmwBinding;
@@ -51,6 +54,32 @@ public class MainActivity extends BaseThemeActivity {
 
         bmwBinding.viewPage.setAdapter(new ViewPagerAdpater(getSupportFragmentManager()));
         bmwBinding.viewPage.setCurrentItem(0);
+        bmwBinding.viewPage.setOffscreenPageLimit(0);
+        bmwBinding.viewPage.setPageTransformer(false, new ViewPager.PageTransformer() {
+            private static final float MIN_SCALE = 0.9f;
+
+            @Override
+            public void transformPage(@NonNull View view, float position) {
+
+                /**
+                 * 过滤那些 <-1 或 >1 的值，使它区于【-1，1】之间
+                 */
+                if (position < -1) {
+                    position = -1;
+                } else if (position > 1) {
+                    position = 1;
+                }
+                /**
+                 * 判断是前一页 1 + position ，右滑 pos -> -1 变 0
+                 * 判断是后一页 1 - position ，左滑 pos -> 1 变 0
+                 */
+                float tempScale = position < 0 ? 1 + position : 1 - position; // [0,1]
+                float scaleValue = MIN_SCALE + tempScale * 0.1f; // [0,1]
+                Log.i(TAG, "transformPage: "+position+" tempScale="+tempScale+" scaleValue="+scaleValue);
+                view.setScaleX(scaleValue);
+                view.setScaleY(scaleValue);
+            }
+        });
     }
 
     private void initMainView() {
